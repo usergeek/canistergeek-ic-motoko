@@ -40,13 +40,13 @@ Copy `canistergeek` folder from this repository into your project.
 
 Please perform the following steps
 
-1. Import library in your canister
+#### Import library in your canister
 
 ```
 import Canistergeek "canistergeek/canistergeek";
 ```
 
-2. Initialize the monitor
+#### Initialize the monitor
 
 Initialize Canistergeek Monitor as a private constant.
 
@@ -58,7 +58,7 @@ actor {
 }
 ```
 
-3. Add post/pre upgrade hooks
+#### Add post/pre upgrade hooks
 
 Add stable variable and implement pre/post upgrade hooks.
 This step is necessary to save collected data between canister upgrades.
@@ -80,7 +80,7 @@ actor {
 }
 ```
 
-4. Implement public methods
+#### Implement public methods
 
 Implement public methods in the canister in order to query collected data and optionally force collecting the data
 
@@ -114,7 +114,7 @@ actor {
 }
 ```
 
-5. Adjust "update" methods
+#### Adjust "update" methods
 
 Call `canistergeekMonitor.collectMetrics()` method in all "update" methods in your canister in order to automatically collect all data.
 
@@ -134,7 +134,7 @@ actor {
 }
 ```
 
-6. LIMIT ACCESS TO YOUR DATA
+#### LIMIT ACCESS TO YOUR DATA
 
 🔴🔴🔴 We highly recommend limiting access by checking caller principal 🔴🔴🔴
 
