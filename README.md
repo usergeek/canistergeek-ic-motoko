@@ -142,13 +142,71 @@ actor {
 ```motoko
 actor {
 
-    let adminPrincipal: Text = "xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxx";
+    private let adminPrincipal: Text = "xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxx";
     
     private func validateCaller(principal: Principal) : () {
         //data is available only for specific principal
         if (not (Principal.toText(principal) == adminPrincipal)) {
             Prelude.unreachable();
         }
+    };
+    
+}
+```
+
+## Full Example
+
+```motoko
+import Canistergeek "canistergeek/canistergeek";
+
+actor {
+
+    stable var _canistergeekMonitorUD: ? Canistergeek.UpgradeData = null;
+    private let canistergeekMonitor = Canistergeek.Monitor();
+    private let adminPrincipal: Text = "xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxx";
+    
+    system func preupgrade() {
+        _canistergeekMonitorUD := ? canistergeekMonitor.preupgrade();
+    };
+
+    system func postupgrade() { 
+        canistergeekMonitor.postupgrade(_canistergeekMonitorUD);
+        _canistergeekMonitorUD := null;
+    };
+    
+    public query ({caller}) func getCanisterMetrics(parameters: Canistergeek.GetMetricsParameters): async ?Canistergeek.CanisterMetrics {
+        validateCaller(caller);
+        canistergeekMonitor.getMetrics(parameters);
+    };
+
+    public shared ({caller}) func collectCanisterMetrics(): async () {
+        validateCaller(caller);
+        canistergeekMonitor.collectMetrics();
+    };
+    
+    private func validateCaller(principal: Principal) : () {
+        //data is available only for specific principal
+        if (not (Principal.toText(principal) == adminPrincipal)) {
+            Prelude.unreachable();
+        }
+    };
+    
+    public shared ({caller}) func doThis(): async () {
+        canistergeekMonitor.collectMetrics();
+        // rest part of the your method...
+    };
+    
+    public shared ({caller}) func doThat(): async () {
+        canistergeekMonitor.collectMetrics();
+        // rest part of the your method...
+    };
+    
+    public query ({caller}) func getThis(): async Text {
+        "this";
+    };
+    
+    public query ({caller}) func getThat(): async Text {
+        "that";
     };
     
 }
