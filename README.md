@@ -42,7 +42,7 @@ Please perform the following steps
 
 #### Import library in your canister
 
-```
+```motoko
 import Canistergeek "canistergeek/canistergeek";
 ```
 
@@ -50,7 +50,7 @@ import Canistergeek "canistergeek/canistergeek";
 
 Initialize Canistergeek Monitor as a private constant.
 
-```
+```motoko
 actor {
 
     private let canistergeekMonitor = Canistergeek.Monitor();
@@ -63,7 +63,7 @@ actor {
 Add stable variable and implement pre/post upgrade hooks.
 This step is necessary to save collected data between canister upgrades.
 
-```
+```motoko
 actor {
     
     stable var _canistergeekMonitorUD: ? Canistergeek.UpgradeData = null;
@@ -84,7 +84,7 @@ actor {
 
 Implement public methods in the canister in order to query collected data and optionally force collecting the data
 
-```
+```motoko
 actor {
     
     // CANISTER MONITORING
@@ -118,7 +118,7 @@ actor {
 
 Call `canistergeekMonitor.collectMetrics()` method in all "update" methods in your canister in order to automatically collect all data.
 
-```
+```motoko
 actor {
     
     public shared ({caller}) func doThis(): async () {
@@ -139,7 +139,7 @@ actor {
 🔴🔴🔴 We highly recommend limiting access by checking caller principal 🔴🔴🔴
 
 
-```
+```motoko
 actor {
 
     let adminPrincipal: Text = "xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-xxx";
