@@ -4,7 +4,7 @@ Canistergeek-IC-Motoko is the open-source tool for Internet Computer to track yo
 
 Canistergeek-IC-Motoko can be integrated into your canisters as motoko library which exposes the `Monitor` - public class that collects the data for specific canister by 5 minutes intervals.
 
-Canistergeek-IC-Motoko should be used together with `Canistergeek-IC-JS` - Javascript library that fetches the data from canisters, perform all necessary calculations and displays it on a webpage 
+Canistergeek-IC-Motoko should be used together with [Canistergeek-IC-JS](https://github.com/usergeek/canistergeek-ic-js) - Javascript library that fetches the data from canisters, perform all necessary calculations and displays it on a webpage 
 
 Stored data consumes ~6.5Mb per year per canister (assuming data points every 5 minutes).
 
