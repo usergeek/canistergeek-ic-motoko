@@ -43,7 +43,7 @@ Please perform the following steps
 #### Import library in your canister
 
 ```motoko
-import Canistergeek "canistergeek/canistergeek";
+import Canistergeek "../canistergeek/canistergeek";
 ```
 
 #### Initialize the monitor
@@ -157,7 +157,7 @@ actor {
 ## Full Example
 
 ```motoko
-import Canistergeek "canistergeek/canistergeek";
+import Canistergeek "../canistergeek/canistergeek";
 
 actor {
 
