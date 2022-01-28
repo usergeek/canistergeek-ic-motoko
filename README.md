@@ -13,7 +13,7 @@ Stored data consumes ~6.5Mb per year per canister (assuming data points every 5 
 Data can be collected in two ways: automatically and manually
 
 1. Manually by calling `collectCanisterMetrics` public method
-2. Automatically by calling `canistergeekMonitor.collectMetrics();` in each "update" method in the canister.
+2. Automatically by calling `canistergeekMonitor.collectMetrics();` in "update" methods in your canister to guarantee desired "Collect metrics" frequency. In some cases you may want to collect metrics in every "update" method to get the full picture in realtime and see how "update" methods influence canister price and capacity.
 
 #### Update calls
 
