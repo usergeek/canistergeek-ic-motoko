@@ -16,7 +16,16 @@ import CalculatorModule "calculatorModule";
 import DateModule "dateModule";
 import TypesModule "typesModule";
 
+import LoggerTypesModule "logger/typesModule";
+import LoggerCollector "logger/collectorModule";
+import LoggerCalculator "logger/calculatorModule";
+import LoggerStorage "logger/storageModule";
+
 module Canistergeek {
+
+    /****************************************************************
+    * Monitor
+    ****************************************************************/
 
     public type UpgradeData = TypesModule.UpgradeData;
     public type CanisterMetrics = CalculatorModule.CanisterMetrics;
@@ -70,5 +79,47 @@ module Canistergeek {
                 case (?value) { ?(value / granularitySeconds); }
             };
         }
+    };
+
+    /****************************************************************
+    * Logger
+    ****************************************************************/
+    
+    public type LoggerUpgradeData = LoggerTypesModule.UpgradeData;
+    public type LoggerMessage = LoggerTypesModule.Message;
+    public type CanisterLogRequest = LoggerTypesModule.CanisterLogRequest;
+    public type CanisterLogResponse = LoggerTypesModule.CanisterLogResponse;
+
+    public class Logger() {
+
+        private var state: LoggerTypesModule.State = LoggerTypesModule.newState(LoggerTypesModule.DEFAULT_MAX_LOG_MESSAGES_COUNT);
+
+        // PUBLIC API
+
+        public func postupgrade(upgradeData: ?LoggerTypesModule.UpgradeData) {
+            state := LoggerTypesModule.loadState(upgradeData, state.maxCount);
+        };
+
+        public func preupgrade() : LoggerTypesModule.UpgradeData {
+            return LoggerTypesModule.prepareUpgradeData(state);
+        };
+
+        public func logMessage(message: LoggerTypesModule.Message) : () {
+            LoggerCollector.storeLogMessage(state, message, Time.now(), LoggerTypesModule.DEFAULT_MAX_LOG_MESSAGE_LENGTH);
+        };
+
+        public func getLog(request: ?LoggerTypesModule.CanisterLogRequest) : ?LoggerTypesModule.CanisterLogResponse {
+            LoggerCalculator.getLog(state, request);
+        };
+
+        public func setMaxMessagesCount(newMaxMessagesCount: Nat) : () {
+            LoggerStorage.setMaxMessagesCount(state, newMaxMessagesCount);
+        };
+
+        public func runTests() {
+            LoggerStorage.runTests();
+            LoggerCollector.runTests();
+            LoggerCalculator.runTests();
+        };
     };
 }
