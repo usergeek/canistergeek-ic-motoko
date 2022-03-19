@@ -239,7 +239,7 @@ actor {
     * Returns collected log messages based on passed parameters.
     * Called from browser.
     */
-    public query ({caller}) func getCanisterLog(request: ?Canistergeek.LoggerRequest) : async ?Canistergeek.LoggerResponse {
+    public query ({caller}) func getCanisterLog(request: ?Canistergeek.CanisterLogRequest) : async ?Canistergeek.CanisterLogResponse {
         validateCaller(caller);
         canistergeekLogger.getLog(request);
     };
