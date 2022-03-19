@@ -52,8 +52,41 @@ Default number of messages (10000) can be overridden with corresponding method i
 
 ## Installation
 
-- Copy `canistergeek` folder from this repository into your project.
+### Option 1: Vessel
+
+Vessel is a package manager for Motoko. [Learn more](https://github.com/dfinity/vessel#getting-started).
+
+- Add canistergeek to your `package-set.dhall`:
+
+```dhall
+let
+  additions =
+      [{ name = "canistergeek"
+      , repo = "https://github.com/usergeek/canistergeek-ic-motoko"
+      , version = "v0.0.3"
+      , dependencies = [] : List Text
+      }] : List Package
+```
+
+- Add canistergeek to your `vessel.dhall`:
+
+```dhall
+dependencies = [ ..., "canistergeek" ],
+```
+
 - Import library in your canister
+
+```motoko
+import Canistergeek "mo:canistergeek/canistergeek";
+```
+
+
+
+### Option 2: Copy Paste
+
+- Copy `src` folder from this repository into your project, renaming it to `canistergeek`.
+- Import library in your canister
+
 ```motoko
 import Canistergeek "../canistergeek/canistergeek";
 ```
