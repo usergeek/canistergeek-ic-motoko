@@ -64,7 +64,7 @@ let
       [{ name = "canistergeek"
       , repo = "https://github.com/usergeek/canistergeek-ic-motoko"
       , version = "v0.0.3"
-      , dependencies = [] : List Text
+      , dependencies = ["base"] : List Text
       }] : List Package
 ```
 
