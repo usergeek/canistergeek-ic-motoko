@@ -333,7 +333,7 @@ actor {
         canistergeekMonitor.collectMetrics();
     };
     
-    public query ({caller}) func getCanisterLog(request: ?Canistergeek.LoggerRequest) : async ?Canistergeek.LoggerResponse {
+    public query ({caller}) func getCanisterLog(request: ?Canistergeek.CanisterLogRequest) : async ?Canistergeek.CanisterLogResponse {
         validateCaller(caller);
         return canistergeekLogger.getLog(request);
     };
