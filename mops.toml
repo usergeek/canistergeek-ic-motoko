@@ -1,0 +1,5 @@
+[package]
+name = "canistergeek"
+version = "0.0.4"
+description = "Canistergeek is the open-source tool for Internet Computer to track your project canisters cycles and memory status and collect log messages."
+repository = "https://github.com/usergeek/canistergeek-ic-motoko"
