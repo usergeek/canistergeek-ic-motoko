@@ -28,7 +28,30 @@ module {
 
     public type DayDataId = Nat32;  // composite key of the day data: 8 bits - year, 4 bits - month, 8 bits - day
     private let dayDataIdKeyEq: (DayDataId, DayDataId) -> Bool = func(x, y) { x == y };
-    private let dayDataIdKeyHash: (DayDataId) -> Hash.Hash = func(x) { Hash.hash(Nat32.toNat(x)) };
+    private let dayDataIdKeyHash: (DayDataId) -> Hash.Hash = func(key) {
+        // Hash.hash analogue
+        var hash : Nat32 = 0;
+        hash := hash +% (key & 0xFF);
+        hash := hash +% hash << 10;
+        hash := hash ^ (hash >> 6);
+
+        hash := hash +% (key & 0xFF00);
+        hash := hash +% hash << 10;
+        hash := hash ^ (hash >> 6);
+
+        hash := hash +% (key & 0xFF0000);
+        hash := hash +% hash << 10;
+        hash := hash ^ (hash >> 6);
+
+        hash := hash +% (key & 0xFF000000);
+        hash := hash +% hash << 10;
+        hash := hash ^ (hash >> 6);
+
+        hash := hash +% hash << 3;
+        hash := hash ^ (hash >> 11);
+        hash := hash +% hash << 15;
+        return hash;
+    };
 
     private func dayDataIdToNat32(dayDataId: DayDataId) : Nat32 {
         return dayDataId;
