@@ -169,6 +169,22 @@ actor {
         canistergeekMonitor.updateInformation(request);
     };
     
+    /**
+    * legacy
+    */
+    public query ({caller}) func getCanisterMetrics(parameters: Canistergeek.GetMetricsParameters): async ?Canistergeek.CanisterMetrics {
+        validateCaller(caller);
+        canistergeekMonitor.getMetrics(parameters);
+    };
+
+    /**
+    * legacy
+    */
+    public shared ({caller}) func collectCanisterMetrics(): async () {
+        validateCaller(caller);
+        canistergeekMonitor.collectMetrics();
+    };
+    
     private func validateCaller(principal: Principal) : () {
         //limit access here!
     };
@@ -347,6 +363,18 @@ actor {
     public query ({caller}) func getCanisterLog(request: ?Canistergeek.CanisterLogRequest) : async ?Canistergeek.CanisterLogResponse {
         validateCaller(caller);
         return canistergeekLogger.getLog(request);
+    };
+    
+    /* legacy */
+    public query ({caller}) func getCanisterMetrics(parameters: Canistergeek.GetMetricsParameters): async ?Canistergeek.CanisterMetrics {
+        validateCaller(caller);
+        canistergeekMonitor.getMetrics(parameters);
+    };
+
+    /* legacy */
+    public shared ({caller}) func collectCanisterMetrics(): async () {
+        validateCaller(caller);
+        canistergeekMonitor.collectMetrics();
     };
     
     private func validateCaller(principal: Principal) : () {
