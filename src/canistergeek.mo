@@ -11,6 +11,7 @@ import Option "mo:base/Option";
 import Prim "mo:prim";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
+import Bool "mo:base/Bool";
 
 import CalculatorModule "calculatorModule";
 import DateModule "dateModule";
@@ -28,11 +29,18 @@ module Canistergeek {
     ****************************************************************/
 
     public type UpgradeData = TypesModule.UpgradeData;
-    public type CanisterMetrics = CalculatorModule.CanisterMetrics;
-    public type GetMetricsParameters = CalculatorModule.GetMetricsParameters;
+    public type CanisterMetrics = TypesModule.CanisterMetrics;
+    public type GetMetricsParameters = TypesModule.GetMetricsParameters;
+    
+    public type GetInformationRequest = TypesModule.GetInformationRequest;
+    public type GetInformationResponse = TypesModule.GetInformationResponse;
+
+    public type UpdateInformationRequest = TypesModule.UpdateInformationRequest;
 
     public class Monitor() {
         
+        private var VERSION: Nat = 1;
+
         private var granularitySeconds: Nat = 60 * 5;
 
         private var state: TypesModule.CanisterMonitoringState = TypesModule.newCanisterMonitoringState();
@@ -47,7 +55,58 @@ module Canistergeek {
             return TypesModule.prepareUpgradeData(state);
         };
 
+        // legacy method - please use "updateInformation" method
         public func collectMetrics() {
+            collectMetrics_int(false);
+        };
+
+        // legacy method - please use "getInformation" method
+        public func getMetrics(parameters: GetMetricsParameters): ?CanisterMetrics {
+            CalculatorModule.getMetrics(state, parameters);
+        };
+
+        public func updateInformation(request: UpdateInformationRequest) {
+            switch (request.metrics) {
+                case (null) {};
+                case (?metricsRequest) {
+                    switch(metricsRequest) {
+                        case (#normal) {
+                            collectMetrics_int(false);
+                        };
+                        case (#force) {
+                            collectMetrics_int(true);
+                        };
+                    };
+                };
+            };
+        };
+
+        public func getInformation(request: GetInformationRequest): GetInformationResponse {
+            var version: ?Nat = null;
+            if (request.version) {
+                version := ?VERSION;
+            };
+            var statusResponse: ?TypesModule.StatusResponse = TypesModule.getStatus(request.status);
+            var metricsResponse: ?TypesModule.MetricsResponse = null;
+            switch (request.metrics) {
+                case (null) {};
+                case (?metricsRequest) {
+                    metricsResponse := ?{
+                        metrics = CalculatorModule.getMetrics(state, metricsRequest.parameters);
+                    };
+                };
+            };
+            let response = {
+                version = version;
+                status = statusResponse;
+                metrics = metricsResponse;
+            };
+            return response;
+        };
+
+        // Private
+
+        private func collectMetrics_int(forceCollect: Bool) {
             ignore do ? {
                 let timeNow: Int = Time.now();
                 let currentDataIntervalIndex: ?Nat = getDataIntervalIndex(timeNow);
@@ -58,19 +117,13 @@ module Canistergeek {
                             case (null) {};
                             case (?(year, month, day)) {
                                 let dayDataId: TypesModule.DayDataId = TypesModule.toDayDataId(year, month, day)!;
-                                TypesModule.collectMetrics(state, dayDataId, currentDataIntervalIndexValue, granularitySeconds);
+                                TypesModule.collectMetrics(state, dayDataId, currentDataIntervalIndexValue, granularitySeconds, forceCollect);
                             };
                         }
                     };
                 }
             };
         };
-
-        public func getMetrics(parameters: GetMetricsParameters): ?CanisterMetrics {
-            CalculatorModule.getMetrics(state, parameters);
-        };
-
-        // Private
 
         private func getDataIntervalIndex(time: Int): ?Nat {
             let secondsFromDayStart: ?Nat = DateModule.Date.secondsFromDayStart(time);

@@ -6,21 +6,12 @@ import UtilsModule "utilsModule";
 
 module {
 
-    public type MetricsGranularity = TypesModule.MetricsGranularity;
-    public type CanisterMetrics = TypesModule.CanisterMetrics;
-
-    public type GetMetricsParameters = {
-        granularity: MetricsGranularity;
-        dateFromMillis: Nat;
-        dateToMillis: Nat;
-    };
-
     private let HOURLY_MAX_DAYS = 9; //used to show last eight (8) 24h-intervals
     private let DAILY_MAX_DAYS = 365;
 
     private func avgOfArrayFilter(value: Nat): Bool { return value > 0; };
 
-    public func getMetrics(state: TypesModule.CanisterMonitoringState, parameters: GetMetricsParameters): ?CanisterMetrics {
+    public func getMetrics(state: TypesModule.CanisterMonitoringState, parameters: TypesModule.GetMetricsParameters): ?TypesModule.CanisterMetrics {
         do ? {
             //millis to nanos
             let dateFromNanos = parameters.dateFromMillis * 1_000_000;

@@ -158,6 +158,57 @@ module {
         data: CanisterMetricsData;
     };
 
+    public type GetMetricsParameters = {
+        granularity: MetricsGranularity;
+        dateFromMillis: Nat;
+        dateToMillis: Nat;
+    };
+
+    public type MetricsRequest = {
+        parameters: GetMetricsParameters;
+    };
+
+    public type MetricsResponse = {
+        metrics: ?CanisterMetrics;
+    };
+
+    // Querying canister status types
+
+    public type StatusRequest = {
+        cycles: Bool;
+        memory_size: Bool;
+        heap_memory_size: Bool;
+    };
+
+    public type StatusResponse = {
+        cycles: ?Nat64;
+        memory_size: ?Nat64;
+        heap_memory_size: ?Nat64;
+    }; 
+
+    // Entry point information types
+
+    private type CollectMetricsRequestType = {
+        #normal; //bump updateCalls and set cycles/memory once per interval
+        #force;  //bump updateCalls and set cycles/memory
+    };
+
+    public type UpdateInformationRequest = {
+        metrics: ?CollectMetricsRequestType;
+    };
+
+    public type GetInformationRequest = {
+        version: Bool;
+        status: ?StatusRequest;
+        metrics: ?MetricsRequest;
+    };
+
+    public type GetInformationResponse = {
+        version: ?Nat;
+        status: ?StatusResponse;
+        metrics: ?MetricsResponse;
+    };
+
     // Init / Pre-Post Upgrade functions
 
     public func newCanisterMonitoringState(): CanisterMonitoringState {
@@ -220,18 +271,48 @@ module {
 
     // New metrics calculating functions
 
-    public func collectMetrics(state: CanisterMonitoringState, dayDataId: DayDataId, intervalIndex: Nat, granularitySeconds: Nat) {
+    public func collectMetrics(state: CanisterMonitoringState, dayDataId: DayDataId, intervalIndex: Nat, granularitySeconds: Nat, forceCollect: Bool) {
         ignore do ? {
             //obtain day data (create new one if does not exist)
             let dayData_v1: DayData = obtainDayDataFromMap(state, dayDataId, granularitySeconds);
             //bump number of update calls
             let newNumberOfUpdateCalls: Nat64 = tryToBumpUpdateCalls(dayData_v1.updateCallsData, intervalIndex)!;
             //analyze if we need to collect additional info
-            let shouldCollectAdditionalInfo = shouldCollectHeapMemoryAndCycles(newNumberOfUpdateCalls);
+            let shouldCollectAdditionalInfo = forceCollect or shouldCollectHeapMemoryAndCycles(newNumberOfUpdateCalls);
             if (shouldCollectAdditionalInfo) {
                 collectHeapMemory(dayData_v1.canisterHeapMemorySizeData, intervalIndex);
                 collectMemory(dayData_v1.canisterMemorySizeData, intervalIndex);
                 collectCycles(dayData_v1.canisterCyclesData, intervalIndex);
+            }
+        };
+    };
+
+    // Get status
+
+    public func getStatus(request: ?StatusRequest): ?StatusResponse {
+        switch(request) {
+            case (null) {
+                return null;
+            };
+            case (?_request) {
+                var cycles: ?Nat64 = null;
+                if (_request.cycles) {
+                    cycles := ?getCurrentCycles();
+                };
+                var memory_size: ?Nat64 = null;
+                if (_request.memory_size) {
+                    memory_size := ?getCurrentMemory();
+                };
+
+                var heap_memory_size: ?Nat64 = null;
+                if (_request.heap_memory_size) {
+                    heap_memory_size := ?getCurrentHeapMemory();
+                };
+                return ?{
+                    cycles = cycles;
+                    memory_size = memory_size;
+                    heap_memory_size = heap_memory_size;
+                };
             };
         };
     };
@@ -288,24 +369,36 @@ module {
 
     private func collectHeapMemory(heapMemorySizeData: DayCanisterHeapMemorySizeData,  intervalIndex: Nat) {
         if (heapMemorySizeData.size() > intervalIndex) {
-            heapMemorySizeData[intervalIndex] := Nat64.fromNat(Prim.rts_heap_size());
+            heapMemorySizeData[intervalIndex] := getCurrentHeapMemory();
         };
+    };
+
+    private func getCurrentHeapMemory(): Nat64 {
+        Nat64.fromNat(Prim.rts_heap_size());
     };
 
     // Private: Memory
 
     private func collectMemory(memorySizeData: DayCanisterMemorySizeData,  intervalIndex: Nat) {
         if (memorySizeData.size() > intervalIndex) {
-            memorySizeData[intervalIndex] := Nat64.fromNat(Prim.rts_memory_size());
+            memorySizeData[intervalIndex] := getCurrentMemory();
         };
+    };
+
+    private func getCurrentMemory(): Nat64 {
+        Nat64.fromNat(Prim.rts_memory_size());
     };
 
     // Private: Cycles
 
     private func collectCycles(cyclesData: DayCanisterCyclesData,  intervalIndex: Nat) {
         if (cyclesData.size() > intervalIndex) {
-            cyclesData[intervalIndex] := Nat64.fromNat(ExperimentalCycles.balance());
+            cyclesData[intervalIndex] := getCurrentCycles();
         };
+    };
+
+    private func getCurrentCycles(): Nat64 {
+        Nat64.fromNat(ExperimentalCycles.balance());
     };
 
     // Private: Conditions

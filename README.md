@@ -13,14 +13,25 @@ Canistergeek-IC-Motoko should be used together with [Canistergeek-IC-JS](https:/
 - `Monitor` - stored data for cycles and memory consumes ~6.5Mb per year per canister (assuming data points every 5 minutes).
 - `Logger` - depends on the length of messages and their number. (canister with e.g. 10000 messages with 4096 characters each consumes 120Mb after upgrade).
 
+## API change in 0.0.6 version
+
+> Starting from version 0.0.6 `Monitor` has new API methods:
+> - `updateInformation` method will replace `collectMetrics` method
+> - `getInformation` method will replace `getMetrics` method
+
+New methods provide an opportunity to evolve API in the future.
+
+Legacy methods (`collectMetrics` and `getMetrics`) still available.
+
+
 ## Metrics
 
 ### Collecting the data
 
 Data can be collected in two ways: automatically and manually
 
-1. Manually by calling `collectCanisterMetrics` public method of your canister.
-2. Automatically by calling `canistergeekMonitor.collectMetrics();` in "update" methods in your canister to guarantee desired "Collect metrics" frequency. In some cases you may want to collect metrics in every "update" method to get the full picture in realtime and see how "update" methods influence canister price and capacity.
+1. Manually by calling `updateCanistergeekInformation` public method of your canister.
+2. Automatically by calling `canistergeekMonitor.updateInformation` or `canistergeekMonitor.collectMetrics` in "update" methods in your canister to guarantee desired "Collect metrics" frequency.<br>In some cases you may want to collect metrics in every "update" method to get the full picture in realtime and see how "update" methods influence canister price and capacity.
 
 #### Update calls
 
@@ -63,7 +74,7 @@ let
   additions =
       [{ name = "canistergeek"
       , repo = "https://github.com/usergeek/canistergeek-ic-motoko"
-      , version = "v0.0.5"
+      , version = "v0.0.6"
       , dependencies = ["base"] : List Text
       }] : List Package
 ```
@@ -141,21 +152,21 @@ actor {
     // CANISTER MONITORING
 
     /**
-    * Returns collected data based on passed parameters.
+    * Returns canister information based on passed parameters.
     * Called from browser.
     */
-    public query ({caller}) func getCanisterMetrics(parameters: Canistergeek.GetMetricsParameters): async ?Canistergeek.CanisterMetrics {
+    public query ({caller}) func getCanistergeekInformation(request: Canistergeek.GetInformationRequest): async Canistergeek.GetInformationResponse {
         validateCaller(caller);
-        canistergeekMonitor.getMetrics(parameters);
+        canistergeekMonitor.getInformation(request);
     };
 
     /**
-    * Force collecting the data at current time.
+    * Updates canister information based on passed parameters at current time.
     * Called from browser or any canister "update" method.
     */
-    public shared ({caller}) func collectCanisterMetrics(): async () {
+    public shared ({caller}) func updateCanistergeekInformation(request: Canistergeek.UpdateInformationRequest): async () {
         validateCaller(caller);
-        canistergeekMonitor.collectMetrics();
+        canistergeekMonitor.updateInformation(request);
     };
     
     private func validateCaller(principal: Principal) : () {
@@ -167,7 +178,7 @@ actor {
 
 #### Adjust "update" methods
 
-Call `canistergeekMonitor.collectMetrics()` method in all "update" methods in your canister in order to automatically collect all data.
+Call `canistergeekMonitor.collectMetrics()` (it is a shortcut for generic method `canistergeekMonitor.updateInformation({metrics = ?#normal});`) method in all "update" methods in your canister in order to automatically collect all data.
 
 ```motoko
 actor {
@@ -323,14 +334,14 @@ actor {
         canistergeekLogger.logMessage("postupgrade");
     };
     
-    public query ({caller}) func getCanisterMetrics(parameters: Canistergeek.GetMetricsParameters): async ?Canistergeek.CanisterMetrics {
+    public query ({caller}) func getCanistergeekInformation(request: Canistergeek.GetInformationRequest): async Canistergeek.GetInformationResponse {
         validateCaller(caller);
-        canistergeekMonitor.getMetrics(parameters);
+        canistergeekMonitor.getInformation(request);
     };
 
-    public shared ({caller}) func collectCanisterMetrics(): async () {
+    public shared ({caller}) func updateCanistergeekInformation(request: Canistergeek.UpdateInformationRequest): async () {
         validateCaller(caller);
-        canistergeekMonitor.collectMetrics();
+        canistergeekMonitor.updateInformation(request);
     };
     
     public query ({caller}) func getCanisterLog(request: ?Canistergeek.CanisterLogRequest) : async ?Canistergeek.CanisterLogResponse {
