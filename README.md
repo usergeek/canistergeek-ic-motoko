@@ -13,6 +13,10 @@ Canistergeek-IC-Motoko should be used together with [Canistergeek-IC-JS](https:/
 - `Monitor` - stored data for cycles and memory consumes ~6.5Mb per year per canister (assuming data points every 5 minutes).
 - `Logger` - depends on the length of messages and their number. (canister with e.g. 10000 messages with 4096 characters each consumes 120Mb after upgrade).
 
+## API change in 0.0.7 version
+
+New static method `Canistergeek.getInformation` added to reduce information from monitor and logger.
+
 ## API change in 0.0.6 version
 
 > Starting from version 0.0.6 `Monitor` has new API methods:
@@ -74,7 +78,7 @@ let
   additions =
       [{ name = "canistergeek"
       , repo = "https://github.com/usergeek/canistergeek-ic-motoko"
-      , version = "v0.0.6"
+      , version = "v0.0.7"
       , dependencies = ["base"] : List Text
       }] : List Package
 ```
@@ -91,8 +95,6 @@ dependencies = [ ..., "canistergeek" ],
 import Canistergeek "mo:canistergeek/canistergeek";
 ```
 
-
-
 ### Option 2: Copy Paste
 
 - Copy `src` folder from this repository into your project, renaming it to `canistergeek`.
@@ -104,39 +106,48 @@ import Canistergeek "../canistergeek/canistergeek";
 
 ## Usage
 
-### Monitor
+### Monitor/Logger
 
 Please perform the following steps
 
 #### Initialize the monitor
 
-Initialize Canistergeek Monitor as a private constant.
+Initialize Canistergeek Monitor and(or) Logger as a private constant(s).
 
 ```motoko
 actor {
 
     private let canistergeekMonitor = Canistergeek.Monitor();
+    private let canistergeekLogger = Canistergeek.Logger();
 
 }
 ```
 
 #### Add post/pre upgrade monitor hooks
 
-Add stable variable and implement pre/post upgrade hooks.
+Add stable variable(s) and implement pre/post upgrade hooks.
 This step is necessary to save collected data between canister upgrades.
 
 ```motoko
 actor {
     
     stable var _canistergeekMonitorUD: ? Canistergeek.UpgradeData = null;
-    
+    stable var _canistergeekLoggerUD: ? Canistergeek.LoggerUpgradeData = null;
+
     system func preupgrade() {
         _canistergeekMonitorUD := ? canistergeekMonitor.preupgrade();
+        _canistergeekLoggerUD := ? canistergeekLogger.preupgrade();
     };
 
     system func postupgrade() { 
         canistergeekMonitor.postupgrade(_canistergeekMonitorUD);
         _canistergeekMonitorUD := null;
+        
+        canistergeekLogger.postupgrade(_canistergeekLoggerUD);
+        _canistergeekLoggerUD := null;
+        
+        //Optional: override default number of log messages to your value
+        canistergeekLogger.setMaxMessagesCount(3000);
     };
     
 }
@@ -157,7 +168,7 @@ actor {
     */
     public query ({caller}) func getCanistergeekInformation(request: Canistergeek.GetInformationRequest): async Canistergeek.GetInformationResponse {
         validateCaller(caller);
-        canistergeekMonitor.getInformation(request);
+        Canistergeek.getInformation(?canistergeekMonitor, ?canistergeekLogger, request);
     };
 
     /**
@@ -167,22 +178,6 @@ actor {
     public shared ({caller}) func updateCanistergeekInformation(request: Canistergeek.UpdateInformationRequest): async () {
         validateCaller(caller);
         canistergeekMonitor.updateInformation(request);
-    };
-    
-    /**
-    * legacy
-    */
-    public query ({caller}) func getCanisterMetrics(parameters: Canistergeek.GetMetricsParameters): async ?Canistergeek.CanisterMetrics {
-        validateCaller(caller);
-        canistergeekMonitor.getMetrics(parameters);
-    };
-
-    /**
-    * legacy
-    */
-    public shared ({caller}) func collectCanisterMetrics(): async () {
-        validateCaller(caller);
-        canistergeekMonitor.collectMetrics();
     };
     
     private func validateCaller(principal: Principal) : () {
@@ -196,101 +191,19 @@ actor {
 
 Call `canistergeekMonitor.collectMetrics()` (it is a shortcut for generic method `canistergeekMonitor.updateInformation({metrics = ?#normal});`) method in all "update" methods in your canister in order to automatically collect all data.
 
-```motoko
-actor {
-    
-    public shared ({caller}) func doThis(): async () {
-        canistergeekMonitor.collectMetrics();
-        // rest part of the your method...
-    };
-    
-    public shared ({caller}) func doThat(): async () {
-        canistergeekMonitor.collectMetrics();
-        // rest part of the your method...
-    };
-    
-}
-```
-
-### Logger
-
-Please perform the following steps
-
-#### Initialize the logger
-
-Initialize Canistergeek Logger as a private constant.
-
-```motoko
-actor {
-
-    private let canistergeekLogger = Canistergeek.Logger();
-
-}
-```
-
-#### Add post/pre upgrade logger hooks
-
-Add stable variable and implement pre/post upgrade hooks.
-This step is necessary to save collected log messages between canister upgrades.
-
-```motoko
-actor {
-    
-    stable var _canistergeekLoggerUD: ? Canistergeek.LoggerUpgradeData = null;
-    
-    system func preupgrade() {
-        _canistergeekLoggerUD := ? canistergeekLogger.preupgrade();
-    };
-
-    system func postupgrade() { 
-        canistergeekLogger.postupgrade(_canistergeekLoggerUD);
-        _canistergeekLoggerUD := null;
-        
-        //Optional: override default number of log messages to your value
-        canistergeekLogger.setMaxMessagesCount(3000);
-    };
-    
-}
-```
-
-#### Implement public methods
-
-Implement public methods in the canister in order to query collected log messages
-
-```motoko
-actor {
-    
-    // CANISTER LOGGER
-
-    /**
-    * Returns collected log messages based on passed parameters.
-    * Called from browser.
-    */
-    public query ({caller}) func getCanisterLog(request: ?Canistergeek.CanisterLogRequest) : async ?Canistergeek.CanisterLogResponse {
-        validateCaller(caller);
-        canistergeekLogger.getLog(request);
-    };
-    
-    private func validateCaller(principal: Principal) : () {
-        //limit access here!
-    };
-    
-}
-```
-
-#### Adjust "update" methods
-
 Call `canistergeekLogger.logMessage()` method where you want to log a message.
 
 ```motoko
 actor {
     
     public shared ({caller}) func doThis(): async () {
+        canistergeekMonitor.collectMetrics();
         canistergeekLogger.logMessage("doThis");
         // rest part of the your method...
     };
     
     public shared ({caller}) func doThat(): async () {
+        canistergeekMonitor.collectMetrics();
         canistergeekLogger.logMessage("doThat");
         // rest part of the your method...
     };
@@ -352,29 +265,12 @@ actor {
     
     public query ({caller}) func getCanistergeekInformation(request: Canistergeek.GetInformationRequest): async Canistergeek.GetInformationResponse {
         validateCaller(caller);
-        canistergeekMonitor.getInformation(request);
+        Canistergeek.getInformation(?canistergeekMonitor, ?canistergeekLogger, request);
     };
 
     public shared ({caller}) func updateCanistergeekInformation(request: Canistergeek.UpdateInformationRequest): async () {
         validateCaller(caller);
         canistergeekMonitor.updateInformation(request);
-    };
-    
-    public query ({caller}) func getCanisterLog(request: ?Canistergeek.CanisterLogRequest) : async ?Canistergeek.CanisterLogResponse {
-        validateCaller(caller);
-        return canistergeekLogger.getLog(request);
-    };
-    
-    /* legacy */
-    public query ({caller}) func getCanisterMetrics(parameters: Canistergeek.GetMetricsParameters): async ?Canistergeek.CanisterMetrics {
-        validateCaller(caller);
-        canistergeekMonitor.getMetrics(parameters);
-    };
-
-    /* legacy */
-    public shared ({caller}) func collectCanisterMetrics(): async () {
-        validateCaller(caller);
-        canistergeekMonitor.collectMetrics();
     };
     
     private func validateCaller(principal: Principal) : () {

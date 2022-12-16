@@ -8,6 +8,8 @@ import Nat64 "mo:base/Nat64";
 import Option "mo:base/Option";
 import Prim "mo:prim";
 
+import LoggerTypesModule "logger/typesModule";
+
 module {
 
     // DayData types
@@ -201,12 +203,14 @@ module {
         version: Bool;
         status: ?StatusRequest;
         metrics: ?MetricsRequest;
+        logs: ?LoggerTypesModule.CanisterLogRequest;
     };
 
     public type GetInformationResponse = {
         version: ?Nat;
         status: ?StatusResponse;
         metrics: ?MetricsResponse;
+        logs: ?LoggerTypesModule.CanisterLogResponse;
     };
 
     // Init / Pre-Post Upgrade functions

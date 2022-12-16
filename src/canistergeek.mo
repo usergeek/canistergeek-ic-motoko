@@ -37,9 +37,44 @@ module Canistergeek {
 
     public type UpdateInformationRequest = TypesModule.UpdateInformationRequest;
 
+    private func getCurrentVersion(): Nat { return 1; };
+
+    public func getInformation(monitor: ?Monitor, logger:?Logger, request: GetInformationRequest): GetInformationResponse {
+        //version
+        var version: ?Nat = null;
+        if (request.version) {
+            version := ?getCurrentVersion();
+        };
+        //status
+        var statusResponse: ?TypesModule.StatusResponse = TypesModule.getStatus(request.status);
+        //metrics
+        var metricsResponse: ?TypesModule.MetricsResponse = null;
+        switch((monitor, request.metrics)) {
+            case ((?monitor, ?metricsRequest)) {
+                metricsResponse := ?{
+                    metrics = monitor.getMetrics(metricsRequest.parameters);
+                };
+            };
+            case ((_, _)) {};
+        };
+        //logger
+        var logsResponse: ?LoggerTypesModule.CanisterLogResponse = null;
+        switch(logger) {
+            case (?logger) {
+                logsResponse := logger.getLog(request.logs);
+            };
+            case (null) {};
+        };
+
+        return {
+            version = version;
+            status = statusResponse;
+            metrics = metricsResponse;
+            logs = logsResponse;
+        }
+    };
+
     public class Monitor() {
-        
-        private var VERSION: Nat = 1;
 
         private var granularitySeconds: Nat = 60 * 5;
 
@@ -81,29 +116,6 @@ module Canistergeek {
             };
         };
 
-        public func getInformation(request: GetInformationRequest): GetInformationResponse {
-            var version: ?Nat = null;
-            if (request.version) {
-                version := ?VERSION;
-            };
-            var statusResponse: ?TypesModule.StatusResponse = TypesModule.getStatus(request.status);
-            var metricsResponse: ?TypesModule.MetricsResponse = null;
-            switch (request.metrics) {
-                case (null) {};
-                case (?metricsRequest) {
-                    metricsResponse := ?{
-                        metrics = CalculatorModule.getMetrics(state, metricsRequest.parameters);
-                    };
-                };
-            };
-            let response = {
-                version = version;
-                status = statusResponse;
-                metrics = metricsResponse;
-            };
-            return response;
-        };
-
         // Private
 
         private func collectMetrics_int(forceCollect: Bool) {
@@ -128,7 +140,7 @@ module Canistergeek {
         private func getDataIntervalIndex(time: Int): ?Nat {
             let secondsFromDayStart: ?Nat = DateModule.Date.secondsFromDayStart(time);
             switch(secondsFromDayStart) {
-                case (null) { null; }; 
+                case (null) { null; };
                 case (?value) { ?(value / granularitySeconds); }
             };
         }
@@ -137,7 +149,7 @@ module Canistergeek {
     /****************************************************************
     * Logger
     ****************************************************************/
-    
+
     public type LoggerUpgradeData = LoggerTypesModule.UpgradeData;
     public type LoggerMessage = LoggerTypesModule.Message;
     public type CanisterLogRequest = LoggerTypesModule.CanisterLogRequest;
