@@ -62,7 +62,7 @@ module {
                             calendar.addDays(-1);
                         };
                         return ?{
-                            data = #hourly (metricsDataBufferReverse.toArray());
+                            data = #hourly (Buffer.toArray(metricsDataBufferReverse));
                         };
                     };
                     case (#daily) {
@@ -99,7 +99,7 @@ module {
                             calendar.addDays(-1);
                         };
                         return ?{
-                            data = #daily (metricsDataBufferReverse.toArray());
+                            data = #daily (Buffer.toArray(metricsDataBufferReverse));
                         };
                     };
                 };

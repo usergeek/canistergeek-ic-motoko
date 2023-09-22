@@ -130,7 +130,7 @@ module {
         };
 
         return ?{
-            data = data.toArray();
+            data = Buffer.toArray(data);
             lastAnalyzedMessageTimeNanos = lastAnalyzedMessageTimeNanos;
         };
     };
