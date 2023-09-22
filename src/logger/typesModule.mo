@@ -129,7 +129,7 @@ module {
 
     private func prepareCurrentUpgradeData_v1(state: State): UpgradeData {
         let upgradeData : UpgradeData = #v1 {
-            queue = state.queue.toArray();
+            queue = Buffer.toArray(state.queue);
             maxCount = state.maxCount;
             next = state.next;
             full = state.full;
