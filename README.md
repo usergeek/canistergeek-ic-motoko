@@ -78,7 +78,7 @@ let
   additions =
       [{ name = "canistergeek"
       , repo = "https://github.com/usergeek/canistergeek-ic-motoko"
-      , version = "v0.0.7"
+      , version = "v0.0.8"
       , dependencies = ["base"] : List Text
       }] : List Package
 ```
